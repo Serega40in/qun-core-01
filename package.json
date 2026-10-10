@@ -1,0 +1,17 @@
+{
+  "name": "qun-core-01",
+  "version": "0.1.0",
+  "private": true,
+  "description": "QUN Core 0.1: local EVM token prototype and AI service scaffold",
+  "scripts": {
+    "chain": "hardhat node",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.2.0",
+    "hardhat": "^2.22.18"
+  }
+}
