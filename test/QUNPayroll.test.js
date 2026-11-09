@@ -161,6 +161,42 @@ describe("QUN membership and payroll MVP", function () {
     );
   });
 
+  it("preserves the lifetime paid-period counter when the schedule is changed", async function () {
+    const { payroll, firstPaymentAt, monthlyAmount, alice } = await deployFixture();
+
+    await time.increaseTo(firstPaymentAt);
+    await payroll.pay(1);
+    const before = await payroll.schedules(1);
+
+    await payroll.setSchedule(
+      1,
+      monthlyAmount * 2n,
+      Number(before.nextPaymentAt) + 60
+    );
+
+    const after = await payroll.schedules(1);
+    expect(after.paidPeriods).to.equal(1);
+    expect(after.amountPerPeriod).to.equal(monthlyAmount * 2n);
+    expect(await payroll.activeSchedules()).to.equal(1);
+  });
+
+  it("protects the reserve while schedules are active and allows withdrawal after cancellation", async function () {
+    const { payroll, token, owner, firstPaymentAt } = await deployFixture();
+    const reserve = await token.balanceOf(await payroll.getAddress());
+
+    await expect(
+      payroll.withdrawReserve(owner.address, reserve)
+    ).to.be.revertedWithCustomError(payroll, "ActiveSchedulesRemain");
+
+    await payroll.cancelSchedule(1);
+    await payroll.withdrawReserve(owner.address, reserve);
+
+    expect(await token.balanceOf(await payroll.getAddress())).to.equal(0n);
+    expect(await token.balanceOf(owner.address)).to.equal(
+      ethers.parseEther("100000000")
+    );
+  });
+
   it("can cancel a schedule and rejects further payments", async function () {
     const { payroll, owner, firstPaymentAt } = await deployFixture();
 
