@@ -13,6 +13,19 @@ A reproducible local prototype for the QUN ecosystem:
 - Python 3.11+ (only for the AI API)
 - Docker (optional, for the AI service)
 
+## QUN Economy MVP — membership NFTs and recurring payroll
+
+This branch adds:
+- `QUNMemberNFT.sol`: non-transferable ERC-721 membership credentials with project/role identifiers.
+- `QUNPayroll.sol`: pre-funded recurring ERC-20 payments linked to active membership NFT IDs.
+- `scripts/deploy-ecosystem.js`: deploy all three contracts to a local EVM.
+- `scripts/payroll-keeper.js`: keeper that detects due schedules and triggers bounded payment batches.
+- `docs/ECONOMY_MVP_RU.md`: Russian setup guide, workflow and limitations.
+
+Run `npm test` and `npm run compile`. For the full walkthrough, see [QUN Economy MVP](docs/ECONOMY_MVP_RU.md).
+
+The payroll MVP uses fixed 30-day periods, requires a keeper transaction, and has not been audited. It is for local/testnet use only; it is not a native independent QUN chain or a legally reviewed salary system.
+
 ## A. Verify token prototype
 From this directory:
 
@@ -22,7 +35,7 @@ npm test
 npm run compile
 ```
 
-Expected: four tests pass, including a user-to-user transfer and supply-cap enforcement. CI will run the same tests on GitHub Actions; check the Actions tab for the actual result.
+Expected: the contract test suite passes, including a user-to-user transfer and supply-cap enforcement. CI will run the same tests on GitHub Actions; check the Actions tab for the actual result.
 
 ## B. Deploy to a local EVM
 Terminal 1:

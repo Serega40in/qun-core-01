@@ -1,0 +1,43 @@
+name: QUN payroll keeper
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  process-due-payments:
+    runs-on: ubuntu-latest
+    env:
+      QUN_TESTNET_RPC_URL: ${{ secrets.QUN_TESTNET_RPC_URL }}
+      QUN_TESTNET_CHAIN_ID: ${{ secrets.QUN_TESTNET_CHAIN_ID }}
+      QUN_KEEPER_PRIVATE_KEY: ${{ secrets.QUN_KEEPER_PRIVATE_KEY }}
+      QUN_PAYROLL_ADDRESS: ${{ secrets.QUN_PAYROLL_ADDRESS }}
+      QUN_PAYROLL_TOKEN_IDS: ${{ secrets.QUN_PAYROLL_TOKEN_IDS }}
+      QUN_KEEPER_ONCE: "1"
+
+    steps:
+      - name: Skip until keeper secrets are configured
+        if: ${{ env.QUN_TESTNET_RPC_URL == '' || env.QUN_KEEPER_PRIVATE_KEY == '' || env.QUN_PAYROLL_ADDRESS == '' || env.QUN_PAYROLL_TOKEN_IDS == '' }}
+        run: echo "Keeper secrets are not configured; no transaction was sent."
+
+      - name: Checkout
+        if: ${{ env.QUN_TESTNET_RPC_URL != '' && env.QUN_KEEPER_PRIVATE_KEY != '' && env.QUN_PAYROLL_ADDRESS != '' && env.QUN_PAYROLL_TOKEN_IDS != '' }}
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: ${{ env.QUN_TESTNET_RPC_URL != '' && env.QUN_KEEPER_PRIVATE_KEY != '' && env.QUN_PAYROLL_ADDRESS != '' && env.QUN_PAYROLL_TOKEN_IDS != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        if: ${{ env.QUN_TESTNET_RPC_URL != '' && env.QUN_KEEPER_PRIVATE_KEY != '' && env.QUN_PAYROLL_ADDRESS != '' && env.QUN_PAYROLL_TOKEN_IDS != '' }}
+        run: npm install
+
+      - name: Process due payroll payments
+        if: ${{ env.QUN_TESTNET_RPC_URL != '' && env.QUN_KEEPER_PRIVATE_KEY != '' && env.QUN_PAYROLL_ADDRESS != '' && env.QUN_PAYROLL_TOKEN_IDS != '' }}
+        run: npm run keeper:testnet

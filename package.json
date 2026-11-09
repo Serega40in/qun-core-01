@@ -7,11 +7,16 @@
     "chain": "hardhat node",
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy:local": "hardhat run scripts/deploy.js --network localhost"
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:ecosystem:local": "hardhat run scripts/deploy-ecosystem.js --network localhost",
+    "deploy:ecosystem:testnet": "hardhat run scripts/deploy-ecosystem.js --network qunTestnet",
+    "keeper:local": "hardhat run scripts/payroll-keeper.js --network localhost",
+    "keeper:testnet": "hardhat run scripts/payroll-keeper.js --network qunTestnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@openzeppelin/contracts": "^5.2.0",
+    "@openzeppelin/contracts": "5.2.0",
+    "dotenv": "^16.4.5",
     "hardhat": "^2.22.18"
   }
 }
