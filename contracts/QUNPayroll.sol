@@ -35,6 +35,7 @@ contract QUNPayroll is Ownable, ReentrancyGuard {
     error PaymentNotDue();
     error BatchTooLarge();
     error TimestampOverflow();
+    error ActiveSchedulesRemain();
 
     event PayrollFunded(address indexed funder, uint256 amount);
     event ScheduleUpdated(
@@ -52,10 +53,12 @@ contract QUNPayroll is Ownable, ReentrancyGuard {
         uint256 nextPaymentAt
     );
     event BatchProcessed(uint256 processed, address indexed executor);
+    event ReserveWithdrawn(address indexed recipient, uint256 amount);
 
     IERC20 public immutable token;
     IQUNMemberRegistry public immutable membership;
     mapping(uint256 tokenId => Schedule schedule) public schedules;
+    uint256 public activeSchedules;
 
     constructor(address tokenAddress, address membershipAddress, address initialOwner)
         Ownable(initialOwner)
@@ -87,10 +90,15 @@ contract QUNPayroll is Ownable, ReentrancyGuard {
         if (!membership.isActive(tokenId)) revert InvalidMember();
         if (amountPerPeriod == 0 || firstPaymentAt == 0) revert InvalidSchedule();
 
+        Schedule storage current = schedules[tokenId];
+        if (!current.active) activeSchedules++;
+
+        // Preserve the lifetime paid-period counter when an admin edits a schedule.
+        uint64 lifetimePaidPeriods = current.paidPeriods;
         schedules[tokenId] = Schedule({
             amountPerPeriod: amountPerPeriod,
             nextPaymentAt: firstPaymentAt,
-            paidPeriods: 0,
+            paidPeriods: lifetimePaidPeriods,
             active: true
         });
 
@@ -100,6 +108,7 @@ contract QUNPayroll is Ownable, ReentrancyGuard {
     function cancelSchedule(uint256 tokenId) external onlyOwner {
         if (!schedules[tokenId].active) revert InvalidSchedule();
         schedules[tokenId].active = false;
+        activeSchedules--;
         emit ScheduleCancelled(tokenId);
     }
 
@@ -135,6 +144,21 @@ contract QUNPayroll is Ownable, ReentrancyGuard {
         }
 
         emit BatchProcessed(processed, msg.sender);
+    }
+
+    /// @notice Return funds only after every payroll schedule has been cancelled.
+    ///         This prevents an admin from withdrawing the reserve while schedules remain active.
+    function withdrawReserve(address recipient, uint256 amount)
+        external
+        onlyOwner
+        nonReentrant
+    {
+        if (recipient == address(0)) revert ZeroAddress();
+        if (amount == 0) revert InvalidAmount();
+        if (activeSchedules != 0) revert ActiveSchedulesRemain();
+
+        token.safeTransfer(recipient, amount);
+        emit ReserveWithdrawn(recipient, amount);
     }
 
     function availableBalance() external view returns (uint256) {
