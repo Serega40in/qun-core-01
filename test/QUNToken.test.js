@@ -26,10 +26,34 @@ describe("QUNToken prototype", function () {
     expect(await token.balanceOf(bob.address)).to.equal(ethers.parseEther("40"));
   });
 
+  it("rejects a zero-address owner", async function () {
+    const Token = await ethers.getContractFactory("QUNToken");
+    await expect(Token.deploy(ethers.ZeroAddress))
+      .to.be.revertedWithCustomError(Token, "OwnableInvalidOwner");
+  });
+
   it("restricts minting to the owner", async function () {
     const { token, alice, stranger } = await deploy();
     await expect(token.connect(stranger).mint(alice.address, 1n))
       .to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
+  });
+
+  it("rejects minting to the zero address", async function () {
+    const { token } = await deploy();
+    await expect(token.mint(ethers.ZeroAddress, 1n))
+      .to.be.revertedWithCustomError(token, "ERC20InvalidReceiver");
+  });
+
+  it("rejects transfers to the zero address", async function () {
+    const { token } = await deploy();
+    await expect(token.transfer(ethers.ZeroAddress, 1n))
+      .to.be.revertedWithCustomError(token, "ERC20InvalidReceiver");
+  });
+
+  it("rejects approvals to the zero address", async function () {
+    const { token } = await deploy();
+    await expect(token.approve(ethers.ZeroAddress, 1n))
+      .to.be.revertedWithCustomError(token, "ERC20InvalidSpender");
   });
 
   it("cannot mint above the hard cap", async function () {
